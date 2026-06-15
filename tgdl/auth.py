@@ -131,3 +131,73 @@ async def _ask(prompt: str, questionary_mod, password: bool = False) -> str:
     if password:
         return await loop.run_in_executor(None, lambda: questionary_mod.password(prompt).ask())
     return await loop.run_in_executor(None, lambda: questionary_mod.text(prompt).ask())
+
+
+# ── headless / step-wise login (drives the Raycast onboarding) ─────────────────
+
+
+def _user_dict(me) -> dict:
+    return {"id": me.id, "first_name": me.first_name, "username": me.username}
+
+
+async def send_login_code(api_id: int, api_hash: str, phone: str) -> dict:
+    """
+    Step 1 of headless login: persist credentials and request an SMS/app code.
+
+    Returns ``{"phone_code_hash": ...}`` to pass to :func:`complete_login`, or
+    ``{"already_authorized": True, "user": ...}`` if the session is already valid.
+    """
+    save_credentials(api_id, api_hash)
+    client = make_client(api_id, api_hash)
+    await client.connect()
+    try:
+        if await client.is_user_authorized():
+            return {
+                "ok": True,
+                "already_authorized": True,
+                "user": _user_dict(await client.get_me()),
+            }
+        sent = await client.send_code_request(phone)
+        return {"ok": True, "phone_code_hash": sent.phone_code_hash}
+    finally:
+        await client.disconnect()
+
+
+async def complete_login(phone: str, code: str, phone_code_hash: str, password: str | None) -> dict:
+    """
+    Step 2 of headless login: sign in with the received code (and 2FA password
+    if the account has one). Reuses the session persisted by step 1.
+    """
+    creds = load_credentials()
+    if not creds:
+        return {"error": "no_credentials"}
+    client = make_client(*creds)
+    await client.connect()
+    try:
+        try:
+            await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+        except SessionPasswordNeededError:
+            if not password:
+                return {"ok": False, "needs_password": True}
+            await client.sign_in(password=password)
+        return {"ok": True, "user": _user_dict(await client.get_me())}
+    finally:
+        await client.disconnect()
+
+
+async def do_logout() -> dict:
+    """Log out of Telegram and remove the local session (for re-onboarding)."""
+    creds = load_credentials()
+    if creds:
+        client = make_client(*creds)
+        await client.connect()
+        try:
+            await client.log_out()
+        except Exception:  # noqa: BLE001 - logging out is best-effort
+            pass
+        finally:
+            if client.is_connected():
+                await client.disconnect()
+    session = Path(str(SESSION_FILE) + ".session")
+    session.unlink(missing_ok=True)
+    return {"ok": True}
