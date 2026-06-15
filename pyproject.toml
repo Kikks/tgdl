@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = ["pytest>=8", "ruff>=0.6", "pre-commit>=3.7", "commitizen>=3.27"]
 
 [project.urls]
 Homepage = "https://github.com/Kikks/tgdl"
@@ -64,3 +64,11 @@ ignore = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version = "0.2.0"
+version_files = ["pyproject.toml:version", "tgdl/__init__.py:__version__"]
+update_changelog_on_bump = false

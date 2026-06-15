@@ -10,17 +10,24 @@ git clone https://github.com/Kikks/tgdl.git
 cd tgdl
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
+pre-commit install --install-hooks          # lint/format on commit
+pre-commit install --hook-type commit-msg   # conventional-commit message check
 ```
 
 ## Running checks
 
 ```bash
-pytest            # tests
-ruff check .      # lint
-ruff format .     # format
+pytest                    # tests
+ruff check .              # lint
+ruff format .             # format
+pre-commit run --all-files  # everything the commit hook runs
 ```
 
-CI runs all three on Python 3.11–3.13; please make sure they pass locally first.
+CI runs lint, format-check, and tests on Python 3.11–3.13; please make sure they
+pass locally first. With the hooks installed, ruff lint/format run automatically
+on staged files at commit time, and your commit message is checked against the
+[Conventional Commits](https://www.conventionalcommits.org/) spec (e.g.
+`feat: add sender subfolder option`, `fix: handle flood-wait retry`).
 
 ## Architecture in one minute
 
@@ -54,5 +61,13 @@ keep both reporters working.
 
 ## Commit messages
 
-Short imperative subject lines (e.g. "Add sender-subfolder option"). Reference
-issues where relevant.
+This repo uses [Conventional Commits](https://www.conventionalcommits.org/),
+enforced by the `commit-msg` hook (commitizen). Format:
+
+```
+<type>[optional scope]: <description>
+```
+
+Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`. For
+example: `feat(jobs): add retry on flood-wait`. Reference issues in the body
+where relevant.
