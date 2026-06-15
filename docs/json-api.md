@@ -70,6 +70,7 @@ One [status object](#status-object), or `{ "error": "not_found" }`.
 
 ### `tgdl job cancel <job_id> --json`  →  `{ "ok": true, "job_id": "…" }`
 ### `tgdl job clean --json`  →  `{ "removed": 3 }`  (removes finished jobs)
+### `tgdl job retry <job_id>`  →  `{ "job_id": "<new>", "pid": … }`  (re-runs from the saved config; always JSON)
 
 ### Status object
 
@@ -81,6 +82,7 @@ One [status object](#status-object), or `{ "error": "not_found" }`.
   "dry_run": false,
   "channel": "@forEDMproducer",
   "channel_name": "EDM Producers",
+  "output_path": "/Users/me/tgdl_downloads",
   "started_at": "2026-06-15T08:13:27Z",
   "updated_at": "2026-06-15T08:13:41Z",
   "totals":   { "files": 24, "bytes": 8123456789 },
@@ -115,6 +117,20 @@ A job claiming an active phase whose process has died is reported as `failed`
   ]
 }
 ```
+
+---
+
+## Profiles
+
+### `tgdl profile list --json`
+
+```json
+[ { "name": "edm", "channel": "@forEDMproducer", "media_types": ["photo"], "output_path": "~/tgdl_downloads" } ]
+```
+
+### `tgdl profile show <name> --json`  →  a [`DownloadConfig`](#downloadconfig), or `{ "error": "not_found" }`.
+
+Run a profile as a background job with `tgdl job start --profile <name>`.
 
 ---
 

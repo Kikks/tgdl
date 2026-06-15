@@ -29,7 +29,7 @@ def run_job(job_id: str, *, dry_run: bool = False) -> int:
         json.loads((d / "config.json").read_text(encoding="utf-8"))
     )
 
-    reporter = JsonReporter(d, dry_run=dry_run)
+    reporter = JsonReporter(d, dry_run=dry_run, output_path=str(config.output_path.expanduser()))
     reporter.channel = config.channel
     reporter.channel_name = config.channel
 

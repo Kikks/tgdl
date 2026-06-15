@@ -319,11 +319,30 @@ def reset(
 
 
 @profile_app.command("list")
-def profile_list():
+def profile_list(json_out: bool = typer.Option(False, "--json", help="Emit JSON.")):
     """List all saved profiles."""
-    from tgdl.profiles import list_profiles
+    from tgdl.profiles import list_profiles, load_profile
 
     profiles = list_profiles()
+
+    if json_out:
+        items = []
+        for name in profiles:
+            try:
+                cfg = load_profile(name)
+                items.append(
+                    {
+                        "name": name,
+                        "channel": cfg.channel,
+                        "media_types": [m.value for m in cfg.media_types],
+                        "output_path": str(cfg.output_path),
+                    }
+                )
+            except (FileNotFoundError, ValueError):
+                items.append({"name": name, "channel": "", "media_types": [], "output_path": ""})
+        _print_json(items)
+        return
+
     if not profiles:
         console.print(
             "[dim]No profiles saved yet. Use [bold]tgdl download --profile[/bold] or save during a wizard run.[/dim]"
@@ -365,6 +384,7 @@ def profile_delete(
 @profile_app.command("show")
 def profile_show(
     name: str = typer.Argument(..., help="Profile name to inspect."),
+    json_out: bool = typer.Option(False, "--json", help="Emit the config as JSON."),
 ):
     """Print the configuration stored in a profile."""
     from tgdl.profiles import load_profile
@@ -372,8 +392,15 @@ def profile_show(
     try:
         cfg = load_profile(name)
     except (FileNotFoundError, ValueError) as exc:
-        console.print(f"[red]{exc}[/red]")
+        if json_out:
+            _print_json({"error": "not_found", "detail": str(exc)})
+        else:
+            console.print(f"[red]{exc}[/red]")
         raise typer.Exit(1)
+
+    if json_out:
+        _print_json(cfg.model_dump(mode="json"))
+        return
 
     import yaml
 
@@ -444,6 +471,23 @@ def job_start(
     job_id = create_job(cfg, dry_run=dry_run)
     pid = start_detached(job_id, dry_run=dry_run)
     _print_json({"job_id": job_id, "pid": pid})
+
+
+@job_app.command("retry")
+def job_retry(job_id: str = typer.Argument(..., help="Job id to re-run.")):
+    """Re-run a job from its saved config as a new detached job. Emits JSON."""
+    from tgdl.jobs import retry_job
+
+    if not _require_auth_quiet():
+        _print_json({"error": "not_authenticated", "hint": "Run `tgdl init` first."})
+        raise typer.Exit(1)
+
+    result = retry_job(job_id)
+    if result is None:
+        _print_json({"error": "not_found", "job_id": job_id})
+        raise typer.Exit(1)
+    new_id, pid = result
+    _print_json({"job_id": new_id, "pid": pid})
 
 
 @job_app.command("list")
