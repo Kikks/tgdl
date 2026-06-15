@@ -155,12 +155,13 @@ class JsonReporter:
 
     FLUSH_INTERVAL = 1.0  # seconds between status.json rewrites
 
-    def __init__(self, job_dir: Path, *, dry_run: bool = False):
+    def __init__(self, job_dir: Path, *, dry_run: bool = False, output_path: str = ""):
         self.job_dir = Path(job_dir)
         self.job_dir.mkdir(parents=True, exist_ok=True)
         self.status_path = self.job_dir / "status.json"
         self.ndjson_path = self.job_dir / "progress.ndjson"
         self.dry_run = dry_run
+        self.output_path = output_path
 
         self.channel = ""
         self.channel_name = ""
@@ -270,6 +271,7 @@ class JsonReporter:
             "dry_run": self.dry_run,
             "channel": self.channel,
             "channel_name": self.channel_name,
+            "output_path": self.output_path,
             "started_at": _iso(self.started_at),
             "updated_at": _iso(now),
             "totals": {"files": self.total_files, "bytes": self.total_bytes},

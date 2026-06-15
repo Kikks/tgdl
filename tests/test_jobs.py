@@ -61,3 +61,27 @@ def test_clean_removes_finished_only(tmp_path, monkeypatch):
     assert removed == 1
     assert jobs.read_status(done) is None
     assert jobs.read_status(active) is not None
+
+
+def test_create_job_status_includes_output_path(tmp_path, monkeypatch):
+    _isolate(tmp_path, monkeypatch)
+    jid = jobs.create_job(DownloadConfig(channel="@x", output_path=tmp_path / "out"))
+    status = jobs.read_status(jid)
+    assert status["output_path"].endswith("out")
+
+
+def test_retry_job_clones_config_to_new_job(tmp_path, monkeypatch):
+    _isolate(tmp_path, monkeypatch)
+    monkeypatch.setattr(jobs, "start_detached", lambda jid, dry_run=False: 4242)
+    jid = jobs.create_job(DownloadConfig(channel="@x"))
+    result = jobs.retry_job(jid)
+    assert result is not None
+    new_id, pid = result
+    assert new_id != jid
+    assert pid == 4242
+    assert jobs.read_status(new_id)["channel"] == "@x"
+
+
+def test_retry_unknown_job_returns_none(tmp_path, monkeypatch):
+    _isolate(tmp_path, monkeypatch)
+    assert jobs.retry_job("does-not-exist") is None

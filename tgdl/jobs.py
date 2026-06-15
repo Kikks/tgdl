@@ -69,6 +69,7 @@ def create_job(config: DownloadConfig, *, dry_run: bool = False) -> str:
             "dry_run": dry_run,
             "channel": config.channel,
             "channel_name": config.channel,
+            "output_path": str(config.output_path.expanduser()),
             "started_at": None,
             "updated_at": _now_iso(),
             "totals": {"files": None, "bytes": 0},
@@ -80,6 +81,19 @@ def create_job(config: DownloadConfig, *, dry_run: bool = False) -> str:
         },
     )
     return job_id
+
+
+def retry_job(job_id: str) -> tuple[str, int] | None:
+    """Re-run a finished/failed job from its saved config. Returns (new_id, pid)."""
+    cfg_path = job_dir(job_id) / "config.json"
+    if not cfg_path.exists():
+        return None
+    config = DownloadConfig.model_validate(json.loads(cfg_path.read_text(encoding="utf-8")))
+    old = read_status(job_id) or {}
+    dry_run = bool(old.get("dry_run"))
+    new_id = create_job(config, dry_run=dry_run)
+    pid = start_detached(new_id, dry_run=dry_run)
+    return new_id, pid
 
 
 def start_detached(job_id: str, *, dry_run: bool = False) -> int:
