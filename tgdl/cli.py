@@ -352,6 +352,29 @@ def profile_list(json_out: bool = typer.Option(False, "--json", help="Emit JSON.
         console.print(f"  [cyan]•[/cyan] {name}")
 
 
+@profile_app.command("save")
+def profile_save(
+    name: str = typer.Option(..., "--name", help="Profile name."),
+    config: str = typer.Option(..., "--config", "-c", help="Path to a JSON DownloadConfig."),
+):
+    """Save a JSON config as a named profile (headless). Emits JSON."""
+    import json as _json
+    from pathlib import Path
+
+    from tgdl.config import DownloadConfig
+    from tgdl.profiles import save_profile
+
+    try:
+        data = _json.loads(Path(config).read_text(encoding="utf-8"))
+        cfg = DownloadConfig.model_validate(data)
+    except Exception as exc:  # noqa: BLE001
+        _print_json({"error": "bad_config", "detail": str(exc)})
+        raise typer.Exit(1) from exc
+
+    save_profile(name.strip(), cfg, quiet=True)
+    _print_json({"ok": True, "name": name.strip()})
+
+
 @profile_app.command("run")
 def profile_run(
     name: str = typer.Argument(..., help="Profile name to run."),

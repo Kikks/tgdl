@@ -20,14 +20,15 @@ def list_profiles() -> list[str]:
     return sorted(p.stem for p in PROFILES_DIR.glob("*.yaml"))
 
 
-def save_profile(name: str, config: DownloadConfig):
+def save_profile(name: str, config: DownloadConfig, quiet: bool = False):
     PROFILES_DIR.mkdir(parents=True, exist_ok=True)
     path = _profile_path(name)
     # Pydantic v2: model_dump with mode='json' gives serialisable types
     data = config.model_dump(mode="json")
     with open(path, "w") as f:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
-    console.print(f"[green]✓ Profile [bold]{name}[/bold] saved → {path}[/green]")
+    if not quiet:
+        console.print(f"[green]✓ Profile [bold]{name}[/bold] saved → {path}[/green]")
 
 
 def load_profile(name: str) -> DownloadConfig:
