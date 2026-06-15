@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# tgdl runtime data & secrets — must NEVER be committed
+*.session
+*.session-journal
+credentials.yaml
+.tgdl/
+
+# OS / editor / tooling
+.DS_Store
+*.swp
+.idea/
+.vscode/
+.claude/
