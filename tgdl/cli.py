@@ -585,6 +585,70 @@ def auth_status(json_out: bool = typer.Option(False, "--json", help="Emit JSON."
         )
 
 
+def _auth_error_code(exc: Exception) -> str:
+    name = type(exc).__name__
+    return {
+        "PhoneCodeInvalidError": "invalid_code",
+        "PhoneCodeExpiredError": "code_expired",
+        "PhoneNumberInvalidError": "invalid_phone",
+        "PhoneNumberUnoccupiedError": "invalid_phone",
+        "PasswordHashInvalidError": "invalid_password",
+        "ApiIdInvalidError": "invalid_api",
+        "FloodWaitError": "flood_wait",
+    }.get(name, "auth_error")
+
+
+@auth_app.command("login-start")
+def auth_login_start(
+    api_id: str = typer.Option(..., "--api-id"),
+    api_hash: str = typer.Option(..., "--api-hash"),
+    phone: str = typer.Option(..., "--phone"),
+):
+    """Headless login step 1: save credentials and request a verification code. Emits JSON."""
+    from tgdl.auth import send_login_code
+
+    if not api_id.strip().isdigit():
+        _print_json({"error": "bad_api_id"})
+        raise typer.Exit(1)
+    try:
+        result = _run(send_login_code(int(api_id), api_hash.strip(), phone.strip()))
+    except Exception as exc:  # noqa: BLE001 - mapped to a JSON error code for the UI
+        result = {"error": _auth_error_code(exc), "detail": str(exc)}
+    _print_json(result)
+
+
+@auth_app.command("login-finish")
+def auth_login_finish(
+    phone: str = typer.Option(..., "--phone"),
+    code: str = typer.Option(..., "--code"),
+    phone_code_hash: str = typer.Option(..., "--phone-code-hash"),
+    password_stdin: bool = typer.Option(
+        False,
+        "--password-stdin",
+        help="Read the 2FA password from stdin (avoids it showing in ps).",
+    ),
+):
+    """Headless login step 2: sign in with the code (and 2FA password). Emits JSON."""
+    import sys
+
+    from tgdl.auth import complete_login
+
+    password = sys.stdin.read().strip() or None if password_stdin else None
+    try:
+        result = _run(complete_login(phone.strip(), code.strip(), phone_code_hash, password))
+    except Exception as exc:  # noqa: BLE001 - mapped to a JSON error code for the UI
+        result = {"error": _auth_error_code(exc), "detail": str(exc)}
+    _print_json(result)
+
+
+@auth_app.command("logout")
+def auth_logout():
+    """Log out of Telegram and remove the local session. Emits JSON."""
+    from tgdl.auth import do_logout
+
+    _print_json(_run(do_logout()))
+
+
 # ── tgdl dialogs ───────────────────────────────────────────────────────────────
 
 
