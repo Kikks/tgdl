@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-06-15
+
+### Added
+- Headless login for in-app onboarding: `auth login-start`, `auth login-finish`, `auth logout`.
+- `tgdl version [--json]`; `auth status --json` now includes a `version` field (so integrators like the Raycast extension can require a minimum CLI version).
+- `tgdl job retry <id>` re-runs a job from its saved config; `status.json` now carries `output_path`.
+- Profile JSON surface: `profile list --json`, `profile show --json`, and headless `profile save --name --config`.
+
 ## [0.2.0] - 2026-06-15
 
 ### Added

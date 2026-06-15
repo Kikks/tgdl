@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tgdl"
-version = "0.2.0"
+version = "0.3.0"
 description = "A fast, scriptable CLI for downloading media from Telegram channels and chats — with smart resume, dedup, filters, profiles, and a background-job JSON API."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -69,6 +69,6 @@ testpaths = ["tests"]
 name = "cz_conventional_commits"
 tag_format = "v$version"
 version_scheme = "pep440"
-version = "0.2.0"
+version = "0.3.0"
 version_files = ["pyproject.toml:version", "tgdl/__init__.py:__version__"]
 update_changelog_on_bump = false

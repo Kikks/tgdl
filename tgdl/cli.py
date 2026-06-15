@@ -7,6 +7,8 @@ from rich.console import Console
 from rich.rule import Rule
 from rich.table import Table
 
+from tgdl import __version__
+
 app = typer.Typer(
     name="tgdl",
     help="Telegram media downloader — download photos, videos, and more from any channel or chat.",
@@ -88,6 +90,15 @@ def init(
     from tgdl.auth import run_init
 
     _run(run_init(force=force))
+
+
+@app.command()
+def version(json_out: bool = typer.Option(False, "--json", help="Emit JSON.")):
+    """Print the installed tgdl version."""
+    if json_out:
+        _print_json({"version": __version__})
+    else:
+        console.print(__version__)
 
 
 # ── tgdl download ────────────────────────────────────────────────────────────
@@ -615,7 +626,7 @@ def auth_status(json_out: bool = typer.Option(False, "--json", help="Emit JSON."
     from tgdl.auth import is_authenticated, load_credentials, make_client
 
     if not is_authenticated():
-        result = {"authenticated": False}
+        result = {"authenticated": False, "version": __version__}
         if json_out:
             _print_json(result)
         else:
@@ -638,6 +649,7 @@ def auth_status(json_out: bool = typer.Option(False, "--json", help="Emit JSON."
             }
 
     result = _run(_check())
+    result["version"] = __version__
     if json_out:
         _print_json(result)
     elif result.get("authenticated"):
