@@ -14,12 +14,31 @@ to stdout.
 
 ### `tgdl auth status --json`
 
+A **cheap, local-only** check (credentials + session file present). It never opens
+the Telegram session, so it is safe to poll frequently and will not clash with a
+running download:
+
 ```json
-{ "authenticated": true, "user": { "id": 895556463, "first_name": "Ada", "username": "ada" } }
+{ "authenticated": true, "version": "0.3.0" }
 ```
 
-When not set up: `{ "authenticated": false }`. Authentication itself
-(`tgdl init`) is interactive (phone code / 2FA) and must run in a terminal.
+When not set up: `{ "authenticated": false, "version": "0.3.0" }`.
+
+### `tgdl auth status --json --verify`
+
+Adds a network round-trip to confirm the session is still valid and return the user:
+
+```json
+{ "authenticated": true, "version": "0.3.0",
+  "user": { "id": 895556463, "first_name": "Ada", "username": "ada" } }
+```
+
+> Prefer the cheap form for readiness checks. `--verify` opens the session DB, which
+> can raise `database is locked` if a download is running — use it sparingly.
+
+The `version` field lets integrators (e.g. the Raycast extension) require a minimum
+CLI version. Authentication itself (`tgdl init`) is interactive (phone code / 2FA)
+and must run in a terminal.
 
 ---
 

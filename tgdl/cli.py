@@ -621,9 +621,32 @@ def _job_run(
 
 
 @auth_app.command("status")
-def auth_status(json_out: bool = typer.Option(False, "--json", help="Emit JSON.")):
-    """Report whether tgdl is authenticated, and as whom."""
+def auth_status(
+    json_out: bool = typer.Option(False, "--json", help="Emit JSON."),
+    verify: bool = typer.Option(
+        False,
+        "--verify",
+        help=(
+            "Verify the session against Telegram (network). Off by default so this "
+            "command never opens the session database — which would clash with a "
+            "running download and raise 'database is locked'."
+        ),
+    ),
+):
+    """Report whether tgdl is authenticated (with --verify, also as whom)."""
     from tgdl.auth import is_authenticated, load_credentials, make_client
+
+    # Default: a cheap, local-only check (credentials + session file exist). Safe
+    # to poll frequently and never contends for the Telegram session DB.
+    if not verify:
+        result = {"authenticated": is_authenticated(), "version": __version__}
+        if json_out:
+            _print_json(result)
+        elif result["authenticated"]:
+            console.print("[green]✓ Authenticated.[/green]")
+        else:
+            console.print("[yellow]Not authenticated.[/yellow] Run [bold]tgdl init[/bold].")
+        return
 
     if not is_authenticated():
         result = {"authenticated": False, "version": __version__}
